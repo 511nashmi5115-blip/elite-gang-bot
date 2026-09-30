@@ -22,27 +22,29 @@ const client = new Client({
 });
 
 const TOKEN = process.env.DISCORD_TOKEN;
+const GUILD_ID = "1554474480192065642";
 
 client.once(Events.ClientReady, async (bot) => {
   console.log(`✅ Logged in as ${bot.user.tag}`);
+
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
 
   const command = new SlashCommandBuilder()
     .setName("setup")
     .setDescription("إنشاء لوحة إرسال الرسائل");
 
-  const rest = new REST({ version: "10" }).setToken(TOKEN);
-
   await rest.put(
-    Routes.applicationCommands(bot.user.id),
-    { body: [command.toJSON()] }
+    Routes.applicationGuildCommands(bot.user.id, GUILD_ID),
+    {
+      body: [command.toJSON()]
+    }
   );
 
-  console.log("✅ /setup جاهز");
+  console.log("✅ /setup تم تسجيله في السيرفر");
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // أمر setup
   if (interaction.isChatInputCommand() && interaction.commandName === "setup") {
 
     const button = new ButtonBuilder()
@@ -52,15 +54,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const row = new ActionRowBuilder().addComponents(button);
 
-    await interaction.reply({
-      content: "اضغط الزر لإرسال رسالة لأعضاء رول معين.",
+    return interaction.reply({
+      content: "📢 لوحة إرسال الرسائل",
       components: [row]
     });
-
-    return;
   }
 
-  // زر الإرسال
   if (interaction.isButton() && interaction.customId === "gang_send") {
 
     const row = new ActionRowBuilder().addComponents(
@@ -71,17 +70,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setMaxValues(1)
     );
 
-    await interaction.reply({
+    return interaction.reply({
       content: "اختر الرول الذي تريد إرسال الرسالة لأعضائه:",
       components: [row],
       ephemeral: true
     });
-
-    return;
   }
 
-  // اختيار الرول
-  if (interaction.isRoleSelectMenu() && interaction.customId === "gang_role") {
+  if (
+    interaction.isRoleSelectMenu() &&
+    interaction.customId === "gang_role"
+  ) {
 
     const roleId = interaction.values[0];
 
@@ -100,12 +99,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       new ActionRowBuilder().addComponents(input)
     );
 
-    await interaction.showModal(modal);
-
-    return;
+    return interaction.showModal(modal);
   }
 
-  // إرسال DM
   if (
     interaction.isModalSubmit() &&
     interaction.customId.startsWith("gang_message_")
@@ -119,8 +115,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const role = interaction.guild.roles.cache.get(roleId);
 
     if (!role) {
-      await interaction.editReply("❌ الرول غير موجود.");
-      return;
+      return interaction.editReply("❌ الرول غير موجود.");
     }
 
     let sent = 0;
@@ -129,12 +124,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       try {
         await member.send(message);
         sent++;
-      } catch {
-        // العضو مانع الرسائل الخاصة
-      }
+      } catch {}
     }
 
-    await interaction.editReply(
+    return interaction.editReply(
       `✅ تم إرسال الرسالة إلى ${sent} عضو من رول ${role.name}.`
     );
   }
