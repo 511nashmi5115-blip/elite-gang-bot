@@ -1,1 +1,12 @@
-
+{
+  "name": "elite-gang-bot",
+  "version": "1.0.0",
+  "description": "Elite Gang Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.21.0"
+  }
+}
